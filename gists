@@ -62,25 +62,27 @@ if args.fgrep:
 res = requests.get("https://api.github.com/gists", auth=(user, token))
 gists = res.json()
 for gist in gists:
+    public = gist["public"]
+    if args.public:
+        if not public:
+            continue
+    elif args.secret:
+        if public:
+            continue
     description = gist["description"]
     filenames = gist["files"].keys()
-    public = gist["public"]
     url = gist["url"]
-    if args.public:
-        if public:
-            print_gist(public, description, filenames, url)
-    elif args.secret:
-        if not public:
-            print_gist(public, description, filenames, url)
-    elif args.dgrep:
+    if args.dgrep:
         if re_dgrep.search(description):
             print_gist(public, description, filenames, url)
-    elif args.fgrep:
+            continue
+    if args.fgrep:
         for filename in filenames:
             if not re_fgrep.search(filename):
                 continue
             else:
                 print_gist(public, description, filenames, url)
                 break
-    else:
+        continue
+    if not(args.dgrep) and not(args.fgrep):
         print_gist(public, description, filenames, url)
