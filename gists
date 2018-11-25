@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+
+import requests
+import sys
+import re
+import os
+from enert import *
+
+def print_gist(public, description, filenames):
+    if public:
+        print("[P]", end="")
+    else:
+        print("[S]", end="")
+    print(description, end=" ")
+    print("(", end="")
+    for (i, filename) in enumerate(filenames):
+        if i != 0:
+            print(", ", end="")
+        print(filename, end="")
+    print(")")
+
+user_token = open(os.environ["GIT_TOKEN_FILE"], "r").readlines()[0]
+re_user = re.compile("([^:]+)")
+re_token = re.compile(":(.*)")
+
+user = re_user.findall(user_token)[0]
+token = re_token.findall(user_token)[0]
+
+usage = "gists [-d|--dgrep=REGEX_FOR_DESCRIPTION] [-f|--fgrep=REGEX_FOR_FILENAME] [-p|--public] [-s|--secret]"
+
+argv = sys.argv
+argc = len(argv)
+
+parser = mkparser(usage)
+parser.add_argument("-d", "--dgrep")
+parser.add_argument("-f", "--fgrep")
+parser.add_argument("-p", "--public", action="store_true")
+parser.add_argument("-s", "--secret", action="store_true")
+
+if argc > 1:
+    args = parser.parse_args(argv[1:])
+else:
+    args = parser.parse_args([])
+
+if args.help:
+    parser.print_help()
+    exit()
+
+if args.dgrep:
+    re_dgrep = re.compile(args.dgrep)
+
+if args.fgrep:
+    re_fgrep = re.compile(args.fgrep)
+
+res = requests.get("https://api.github.com/gists", auth=(user, token))
+gists = res.json()
+for gist in gists:
+    description = gist["description"]
+    filenames = gist["files"].keys()
+    public = gist["public"]
+    if args.public:
+        if public:
+            print_gist(public, description, filenames)
+    elif args.secret:
+        if not public:
+            print_gist(public, description, filenames)
+    elif args.dgrep:
+        if re_dgrep.search(description):
+            print_gist(public, description, filenames)
+    elif args.fgrep:
+        for filename in filenames:
+            if not re_fgrep.search(filename):
+                continue
+            else:
+                print_gist(public, description, filenames)
+                break
+    else:
+        print_gist(public, description, filenames)
