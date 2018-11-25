@@ -6,11 +6,13 @@ import re
 import os
 from enert import *
 
-def print_gist(public, description, filenames):
+def print_gist(public, description, filenames, url):
+    url = url.replace("https://api.github.com/gists/", "")
+    print(url, end=" ")
     if public:
-        print("[P]", end="")
+        print("[P] ", end="")
     else:
-        print("[S]", end="")
+        print("[S] ", end="")
     print(description, end=" ")
     print("(", end="")
     for (i, filename) in enumerate(filenames):
@@ -26,7 +28,7 @@ re_token = re.compile(":(.*)")
 user = re_user.findall(user_token)[0]
 token = re_token.findall(user_token)[0]
 
-usage = "gists [-d|--dgrep=REGEX_FOR_DESCRIPTION] [-f|--fgrep=REGEX_FOR_FILENAME] [-p|--public] [-s|--secret]"
+usage = "gists [-d|--dgrep=REGEX_FOR_DESCRIPTION] [-f|--fgrep=REGEX_FOR_FILENAME] [-p|--public] [-s|--secret] [-c|--clone=GIST_HASH]"
 
 argv = sys.argv
 argc = len(argv)
@@ -36,6 +38,7 @@ parser.add_argument("-d", "--dgrep")
 parser.add_argument("-f", "--fgrep")
 parser.add_argument("-p", "--public", action="store_true")
 parser.add_argument("-s", "--secret", action="store_true")
+parser.add_argument("-c", "--clone")
 
 if argc > 1:
     args = parser.parse_args(argv[1:])
@@ -44,6 +47,10 @@ else:
 
 if args.help:
     parser.print_help()
+    exit()
+
+if args.clone:
+    Shell("git clone https://gist.github.com/%s/%s" % (user, args.clone)).call()
     exit()
 
 if args.dgrep:
@@ -58,21 +65,22 @@ for gist in gists:
     description = gist["description"]
     filenames = gist["files"].keys()
     public = gist["public"]
+    url = gist["url"]
     if args.public:
         if public:
-            print_gist(public, description, filenames)
+            print_gist(public, description, filenames, url)
     elif args.secret:
         if not public:
-            print_gist(public, description, filenames)
+            print_gist(public, description, filenames, url)
     elif args.dgrep:
         if re_dgrep.search(description):
-            print_gist(public, description, filenames)
+            print_gist(public, description, filenames, url)
     elif args.fgrep:
         for filename in filenames:
             if not re_fgrep.search(filename):
                 continue
             else:
-                print_gist(public, description, filenames)
+                print_gist(public, description, filenames, url)
                 break
     else:
-        print_gist(public, description, filenames)
+        print_gist(public, description, filenames, url)

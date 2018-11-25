@@ -8,7 +8,7 @@ $ gists
 ```
 
 ```
-usage: gists [-d|--dgrep=REGEX_FOR_DESCRIPTION] [-f|--fgrep=REGEX_FOR_FILENAME] [-p|--public] [-s|--secret]
+usage: gists [-d|--dgrep=REGEX_FOR_DESCRIPTION] [-f|--fgrep=REGEX_FOR_FILENAME] [-p|--public] [-s|--secret] [-c|--clone=GIST_HASH]
 
 positional arguments:
   args
@@ -19,4 +19,5 @@ optional arguments:
   -f FGREP, --fgrep FGREP
   -p, --public
   -s, --secret
+  -c CLONE, --clone CLONE
 ```
