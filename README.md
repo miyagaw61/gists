@@ -1,4 +1,4 @@
-# gists - show my all gists
+# gists - show my gists
 
 ```
 $ cat > /path/to/git_token
