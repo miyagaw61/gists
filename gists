@@ -50,7 +50,14 @@ if args.help:
     exit()
 
 if args.clone:
-    Shell("git clone https://gist.github.com/%s/%s" % (user, args.clone)).call()
+    r_description = re.compile(r"[^ ]+ \[[PS]\] ([^\(]+)")
+    line = Shell("gists | rg %s" % args.clone).readlines()[0][0]
+    description = r_description.findall(line)[0] 
+    description = description.replace(" ", "_")
+    description = description.replace("/", "_")
+    if description[-1] == "_":
+        description = description[:-1]
+    Shell("git clone https://gist.github.com/%s/%s %s" % (user, args.clone, description)).call()
     exit()
 
 if args.dgrep:
