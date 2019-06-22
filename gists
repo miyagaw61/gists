@@ -6,7 +6,7 @@ import re
 import os
 from enert import *
 
-def print_gist(public, description, filenames, url):
+def print_gist(public, description, filenames, url, user):
     url = url.replace("https://api.github.com/gists/", "")
     print(url, end=" ")
     if public:
@@ -20,6 +20,8 @@ def print_gist(public, description, filenames, url):
             print(", ", end="")
         print(filename, end="")
     print(")")
+    if args.all_clone:
+        clone(url, user)
 
 user_token = open(os.environ["GIT_TOKEN_FILE"], "r").readlines()[0]
 re_user = re.compile("([^:]+)")
@@ -30,7 +32,7 @@ token = re_token.findall(user_token)[0]
 
 pwd = os.getcwd()
 
-usage = "gists [-d|--dgrep=REGEX_FOR_DESCRIPTION] [-f|--fgrep=REGEX_FOR_FILENAME] [-p|--public] [-s|--secret] [-c|--clone=GIST_HASH]"
+usage = "gists [-d|--dgrep=REGEX_FOR_DESCRIPTION] [-f|--fgrep=REGEX_FOR_FILENAME] [-p|--public] [-s|--secret] [-c|--clone=GIST_HASH] [-a|--all-clone]"
 
 argv = sys.argv
 argc = len(argv)
@@ -41,6 +43,7 @@ parser.add_argument("-f", "--fgrep")
 parser.add_argument("-p", "--public", action="store_true")
 parser.add_argument("-s", "--secret", action="store_true")
 parser.add_argument("-c", "--clone")
+parser.add_argument("-a", "--all-clone", action="store_true")
 
 if argc > 1:
     args = parser.parse_args(argv[1:])
@@ -51,19 +54,21 @@ if args.help:
     parser.print_help()
     exit()
 
-if args.clone:
+def clone(gist_hash, user):
     r_description = re.compile(r"[^ ]+ \[[PS]\] ([^\(]+)")
-    line = Shell("gists | rg %s" % args.clone).readlines()[0][0]
+    line = Shell("gists | rg %s" % gist_hash).readlines()[0][0]
     description = r_description.findall(line)[0] 
     description = description.replace(" ", "_")
     description = description.replace("/", "_")
     if description[-1] == "_":
         description = description[:-1]
-    Shell("ghq get https://gist.github.com/%s/%s" % (user, args.clone)).call()
-    src_dir, _ = Shell("git config --global ghq.root").readlines()
-    src_dir = src_dir[0]
-    cmd = f"mv {src_dir}/gist.github.com/{user}/{args.clone} {src_dir}/gist.github.com/{user}/{description}"
+    Shell("ghq get https://gist.github.com/%s/%s" % (user, gist_hash)).call()
+    src_dir = Shell("git config --global ghq.root").readlines()[0][0]
+    cmd = f"mv {src_dir}/gist.github.com/{user}/{gist_hash} {src_dir}/gist.github.com/{user}/{description}"
     Shell(cmd).call()
+
+if args.clone:
+    clone(args.clone, user)
     exit()
 
 if args.dgrep:
@@ -87,15 +92,15 @@ for gist in gists:
     url = gist["url"]
     if args.dgrep:
         if re_dgrep.search(description):
-            print_gist(public, description, filenames, url)
+            print_gist(public, description, filenames, url, user)
             continue
     if args.fgrep:
         for filename in filenames:
             if not re_fgrep.search(filename):
                 continue
             else:
-                print_gist(public, description, filenames, url)
+                print_gist(public, description, filenames, url, user)
                 break
         continue
     if not(args.dgrep) and not(args.fgrep):
-        print_gist(public, description, filenames, url)
+        print_gist(public, description, filenames, url, user)
