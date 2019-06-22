@@ -59,7 +59,6 @@ def clone(gist_hash, user):
     line = Shell("gists | rg %s" % gist_hash).readlines()[0][0]
     description = r_description.findall(line)[0] 
     description = description.replace(" ", r"\ ")
-    description = description.replace("/", r"\/")
     if description[-1] == "_":
         description = description[:-1]
     Shell("ghq get https://gist.github.com/%s/%s" % (user, gist_hash)).call()
