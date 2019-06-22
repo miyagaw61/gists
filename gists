@@ -58,13 +58,20 @@ def clone(gist_hash, user):
     r_description = re.compile(r"[^ ]+ \[[PS]\] ([^\(]+)")
     line = Shell("gists | rg %s" % gist_hash).readlines()[0][0]
     description = r_description.findall(line)[0] 
-    description = description.replace(" ", r"\ ")
-    if description[-1] == "_":
+    if description[-1:] == r" ":
         description = description[:-1]
-    Shell("ghq get https://gist.github.com/%s/%s" % (user, gist_hash)).call()
+    description_org = description
+    description = description.replace(" ", r"\ ")
     src_dir = Shell("git config --global ghq.root").readlines()[0][0]
-    cmd = f"mv {src_dir}/gist.github.com/{user}/{gist_hash} {src_dir}/gist.github.com/{user}/{description}"
-    Shell(cmd).call()
+    path = f"{src_dir}/gist.github.com/{user}/{description_org}"
+    path = path.replace("~", f"/home/{user}")
+    f = File(path)
+    if not f.exist():
+        Shell("ghq get https://gist.github.com/%s/%s" % (user, gist_hash)).call()
+        cmd = f"mv {src_dir}/gist.github.com/{user}/{gist_hash} {src_dir}/gist.github.com/{user}/{description}"
+        Shell(cmd).call()
+    else:
+        print(f.abspath + ": Already exists")
 
 if args.clone:
     clone(args.clone, user)
