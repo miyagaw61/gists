@@ -28,6 +28,8 @@ re_token = re.compile(":(.*)")
 user = re_user.findall(user_token)[0]
 token = re_token.findall(user_token)[0]
 
+pwd = os.getcwd()
+
 usage = "gists [-d|--dgrep=REGEX_FOR_DESCRIPTION] [-f|--fgrep=REGEX_FOR_FILENAME] [-p|--public] [-s|--secret] [-c|--clone=GIST_HASH]"
 
 argv = sys.argv
@@ -57,7 +59,11 @@ if args.clone:
     description = description.replace("/", "_")
     if description[-1] == "_":
         description = description[:-1]
-    Shell("git clone https://gist.github.com/%s/%s %s" % (user, args.clone, description)).call()
+    Shell("ghq get https://gist.github.com/%s/%s" % (user, args.clone)).call()
+    src_dir, _ = Shell("git config --global ghq.root").readlines()
+    src_dir = src_dir[0]
+    cmd = f"mv {src_dir}/gist.github.com/{user}/{args.clone} {src_dir}/gist.github.com/{user}/{description}"
+    Shell(cmd).call()
     exit()
 
 if args.dgrep:
