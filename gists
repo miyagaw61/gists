@@ -85,7 +85,7 @@ def push(filename, mode, description=""):
     elif mode == "public":
         opt = "--no-private"
     if description != "":
-        description = f"-d {description}"
+        description = f"-d '{description}'"
     Shell(f"gist {opt} {description} {filename}").call()
 
 if args.clone:
