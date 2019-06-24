@@ -76,6 +76,10 @@ def clone(gist_hash, user):
         print(f.abspath + ": Already exists")
 
 def push(filename, mode, description=""):
+    gist_tool = Shell("which gist").readlines()[0]
+    if gist_tool == []:
+        print("please install https://github.com/defunkt/gist")
+        exit()
     if mode == "secret":
         opt = "--private"
     elif mode == "public":
