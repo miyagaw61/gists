@@ -32,20 +32,20 @@ token = re_token.findall(user_token)[0]
 
 pwd = os.getcwd()
 
-usage = "gists [-d|--dgrep=REGEX_FOR_DESCRIPTION] [-f|--fgrep=REGEX_FOR_FILENAME] [-p|--public] [-s|--secret] [-c|--clone=GIST_HASH] [-a|--all-clone] [-P|--push-public=FILE_NAME] [-S|--push-secret=FILE_NAME]"
+usage = "gists <[options]...>"
 
 argv = sys.argv
 argc = len(argv)
 
 parser = mkparser(usage)
-parser.add_argument("-d", "--dgrep")
-parser.add_argument("-f", "--fgrep")
+parser.add_argument("-d", "--dgrep", metavar="REGEX_FOR_DESCRIPTION")
+parser.add_argument("-f", "--fgrep", metavar="REGEX_FOR_FILENAME")
 parser.add_argument("-p", "--public", action="store_true")
 parser.add_argument("-s", "--secret", action="store_true")
-parser.add_argument("-c", "--clone")
+parser.add_argument("-c", "--clone", metavar="GIST_ID")
 parser.add_argument("-a", "--all-clone", action="store_true")
-parser.add_argument("-P", "--push-public")
-parser.add_argument("-S", "--push-secret")
+parser.add_argument("-P", "--push-public", metavar="FILE_NAME [-d DESCRIPTION]")
+parser.add_argument("-S", "--push-secret", metavar="FILE_NAME [-d DESCRIPTION]")
 
 if argc > 1:
     args = parser.parse_args(argv[1:])
