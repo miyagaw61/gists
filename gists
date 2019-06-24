@@ -32,7 +32,7 @@ token = re_token.findall(user_token)[0]
 
 pwd = os.getcwd()
 
-usage = "gists [-d|--dgrep=REGEX_FOR_DESCRIPTION] [-f|--fgrep=REGEX_FOR_FILENAME] [-p|--public] [-s|--secret] [-c|--clone=GIST_HASH] [-a|--all-clone]"
+usage = "gists [-d|--dgrep=REGEX_FOR_DESCRIPTION] [-f|--fgrep=REGEX_FOR_FILENAME] [-p|--public] [-s|--secret] [-c|--clone=GIST_HASH] [-a|--all-clone] [-P|--push-public=FILE_NAME] [-S|--push-secret=FILE_NAME]"
 
 argv = sys.argv
 argc = len(argv)
@@ -44,6 +44,8 @@ parser.add_argument("-p", "--public", action="store_true")
 parser.add_argument("-s", "--secret", action="store_true")
 parser.add_argument("-c", "--clone")
 parser.add_argument("-a", "--all-clone", action="store_true")
+parser.add_argument("-P", "--push-public")
+parser.add_argument("-S", "--push-secret")
 
 if argc > 1:
     args = parser.parse_args(argv[1:])
@@ -73,8 +75,30 @@ def clone(gist_hash, user):
     else:
         print(f.abspath + ": Already exists")
 
+def push(filename, mode, description=""):
+    if mode == "secret":
+        opt = "--private"
+    elif mode == "public":
+        opt = "--no-private"
+    if description != "":
+        description = f"-d {description}"
+    Shell(f"gist {opt} {description} {filename}").call()
+
 if args.clone:
     clone(args.clone, user)
+    exit()
+
+if args.dgrep:
+    push_description = args.dgrep
+else:
+    push_description = ""
+
+if args.push_public:
+    push(args.push_public, "public", push_description);
+    exit()
+
+if args.push_secret:
+    push(args.push_secret, "secret", push_description);
     exit()
 
 if args.dgrep:
