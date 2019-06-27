@@ -124,8 +124,6 @@ if not args.clone and not args.all_clone and args.use_ssh:
 
 if args.clone:
     clone(args.clone, user)
-    if args.use_ssh:
-        use_ssh()
     exit()
 
 if args.dgrep:
