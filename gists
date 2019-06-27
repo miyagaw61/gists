@@ -70,24 +70,25 @@ def clone(gist_hash, user):
     description = description.replace("(", r"\(")
     description = description.replace(")", r"\)")
     src_dir = Shell("git config --global ghq.root").readlines()[0][0]
-    path = f"{src_dir}/gist.github.com/{user}/{description_org}"
+    if args.rename:
+        dirname = description
+    else:
+        dirname = gist_hash
+    path = f"{src_dir}/gist.github.com/{user}/{dirname}"
     path = path.replace("~", f"/home/{user}")
     f = File(path)
     if not f.exist() or args.force:
-        Shell("ghq get https://gist.github.com/%s/%s" % (user, gist_hash)).call()
-        if args.use_ssh:
-            Shell(f"ghq look {gist_hash}").call()
-            use_ssh()
-        if args.rename:
-            dirname = description 
-        else:
-            dirname = gist_hash
-        f = File(f"{src_dir}/gist.github.com/{user}/{dirname}")
         if args.force:
             cmd = f"rm -rf {src_dir}/gist.github.com/{user}/{dirname}"
             Shell(cmd).call()
-        cmd = f"mv {src_dir}/gist.github.com/{user}/{gist_hash} {src_dir}/gist.github.com/{user}/{dirname}"
-        Shell(cmd).call()
+        if args.use_ssh:
+            Shell("ghq get git@gist.github.com:%s" % gist_hash).call()
+            Shell(f"mv {src_dir}/gist.github.com/{gist_hash} {src_dir}/gist.github.com/{user}/{gist_hash}").call()
+        else:
+            Shell("ghq get https://gist.github.com/%s/%s" % (user, gist_hash)).call()
+        if args.rename:
+            cmd = f"mv {src_dir}/gist.github.com/{user}/{gist_hash} {src_dir}/gist.github.com/{user}/{dirname}"
+            Shell(cmd).call()
         print(f"move to {src_dir}/gist.github.com/{user}/{dirname}")
     else:
         print(f.abspath + ": Already exists")
@@ -117,7 +118,7 @@ def use_ssh():
     Shell(f"git remote add origin git@gist.github.com:{gist_id}").call()
     Shell("git push --set-upstream origin master").call()
 
-if args.use_ssh:
+if not args.clone and not args.all_clone and args.use_ssh:
     use_ssh()
     exit()
 
