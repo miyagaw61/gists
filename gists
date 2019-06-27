@@ -47,6 +47,7 @@ parser.add_argument("-a", "--all-clone", action="store_true")
 parser.add_argument("-P", "--push-public", metavar="FILE_NAME [-d DESCRIPTION]")
 parser.add_argument("-S", "--push-secret", metavar="FILE_NAME [-d DESCRIPTION]")
 parser.add_argument("-F", "--force", action="store_true", help="overwrite if a directory already exists")
+parser.add_argument("-u", "--use-ssh", action="store_true")
 
 if argc > 1:
     args = parser.parse_args(argv[1:])
@@ -73,6 +74,10 @@ def clone(gist_hash, user):
     f = File(path)
     if not f.exist() or args.force:
         Shell("ghq get https://gist.github.com/%s/%s" % (user, gist_hash)).call()
+        if args.use_ssh:
+            Shell(f"ghq look {gist_hash}").call()
+            use_ssh()
+        f = File(f"{src_dir}/gist.github.com/{user}/{description}")
         if args.force:
             cmd = f"rm -rf {src_dir}/gist.github.com/{user}/{description}"
             Shell(cmd).call()
@@ -95,8 +100,26 @@ def push(filename, mode, description=""):
         description = f"-d '{description}'"
     Shell(f"gist {opt} {description} {filename}").call()
 
+def use_ssh():
+    origin = Shell("git remote -v").readlines()[0][0]
+    r_ssh = re.compile(r"git@gist.github.com")
+    ssh = r_ssh.findall(origin)
+    if ssh != []:
+        return
+    r_gist_id = re.compile(r"([0-9a-f]{5}[0-9a-f]*)")
+    gist_id = r_gist_id.findall(origin)[0]
+    Shell("git remote remove origin").call()
+    Shell(f"git remote add origin git@gist.github.com:{gist_id}").call()
+    Shell("git push --set-upstream origin master").call()
+
+if args.use_ssh:
+    use_ssh()
+    exit()
+
 if args.clone:
     clone(args.clone, user)
+    if args.use_ssh:
+        use_ssh()
     exit()
 
 if args.dgrep:
