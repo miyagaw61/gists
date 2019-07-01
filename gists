@@ -6,7 +6,7 @@ import re
 import os
 from enert import *
 
-def print_gist(public, description, filenames, url, user):
+def print_gist(public, description, filenames, url, src_dir, user):
     url = url.replace("https://api.github.com/gists/", "")
     print(url, end=" ")
     if public:
@@ -21,7 +21,7 @@ def print_gist(public, description, filenames, url, user):
         print(filename, end="")
     print(")")
     if args.all_clone:
-        clone(url, user)
+        clone(url, src_dir, user)
 
 user_token = open(os.environ["GIT_TOKEN_FILE"], "r").readlines()[0]
 re_user = re.compile("([^:]+)")
@@ -59,7 +59,7 @@ if args.help:
     parser.print_help()
     exit()
 
-def clone(gist_hash, user):
+def clone(gist_hash, src_dir, user):
     r_description = re.compile(r"[^ ]+ \[[PS]\] (.*) \(.*\)")
     line = Shell("gists | rg %s" % gist_hash).readlines()[0][0]
     description = r_description.findall(line)[0] 
@@ -69,18 +69,23 @@ def clone(gist_hash, user):
     description = description.replace(" ", r"\ ")
     description = description.replace("(", r"\(")
     description = description.replace(")", r"\)")
-    src_dir = Shell("git config --global ghq.root").readlines()[0][0]
     if args.rename:
         dirname = description
     else:
         dirname = gist_hash
     path = f"{src_dir}/gist.github.com/{user}/{dirname}"
-    path = path.replace("~", f"/home/{user}")
     f = File(path)
     if not f.exist() or args.force:
         if args.force:
-            cmd = f"rm -rf {src_dir}/gist.github.com/{user}/{dirname}"
-            Shell(cmd).call()
+            status = Shell(f"cd {src_dir}/gist.github.com/{user}/{dirname}; git status --short").readlines()[0]
+            log = Shell(f"cd {src_dir}/gist.github.com/{user}/{dirname}; git log --oneline --decorate=short | head -1 | rg origin | rg master").readlines()[0]
+            if status == [] and log != []:
+                cmd = f"rm -rf {src_dir}/gist.github.com/{user}/{dirname}"
+                Shell(cmd).call()
+            else:
+                print(f"You have something to do: {dirname}")
+                Shell(f"echo {dirname} >> {src_dir}/gist.github.com/{user}/somethingToDo.txt").call()
+                return
         if args.use_ssh:
             Shell("ghq get git@gist.github.com:%s" % gist_hash).call()
             Shell(f"mv {src_dir}/gist.github.com/{gist_hash} {src_dir}/gist.github.com/{user}/{gist_hash}").call()
@@ -118,12 +123,30 @@ def use_ssh():
     Shell(f"git remote add origin git@gist.github.com:{gist_id}").call()
     Shell("git push --set-upstream origin master").call()
 
+src_dir = Shell("git config --global ghq.root").readlines()[0][0]
+src_dir = src_dir.replace("~", f"/home/{user}")
+
+def check_somethingToDo(src_dir, user):
+    f_somethingToDo = File(f"{src_dir}/gist.github.com/{user}/somethingToDo.txt")
+    if f_somethingToDo.exist():
+        print(f"warning: exists: {src_dir}/gist.github.com/{user}/somethingToDo.txt")
+        exit()
+
+def warn_somethingToDo(src_dir, user):
+    f_somethingToDo = File(f"{src_dir}/gist.github.com/{user}/somethingToDo.txt")
+    if f_somethingToDo.exist():
+        print(red(f"warning: Look at this file: {src_dir}/gist.github.com/{user}/somethingToDo.txt", "bold"))
+        exit()
+
+check_somethingToDo(src_dir, user)
+
 if not args.clone and not args.all_clone and args.use_ssh:
     use_ssh()
     exit()
 
 if args.clone:
-    clone(args.clone, user)
+    clone(args.clone, src_dir, user)
+    warn_somethingToDo(src_dir, user)
     exit()
 
 if args.dgrep:
@@ -160,15 +183,16 @@ for gist in gists:
     url = gist["url"]
     if args.dgrep:
         if re_dgrep.search(description):
-            print_gist(public, description, filenames, url, user)
+            print_gist(public, description, filenames, url, src_dir, user)
             continue
     if args.fgrep:
         for filename in filenames:
             if not re_fgrep.search(filename):
                 continue
             else:
-                print_gist(public, description, filenames, url, user)
+                print_gist(public, description, filenames, url, src_dir, user)
                 break
         continue
     if not(args.dgrep) and not(args.fgrep):
-        print_gist(public, description, filenames, url, user)
+        print_gist(public, description, filenames, url, src_dir, user)
+warn_somethingToDo(src_dir, user)
