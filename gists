@@ -76,9 +76,11 @@ def clone(gist_hash, src_dir, user):
     path = f"{src_dir}/gist.github.com/{user}/{dirname}"
     f = File(path)
     if not f.exist() or args.force:
-        if args.force:
-            status = Shell(f"cd {src_dir}/gist.github.com/{user}/{dirname}; git status --short").readlines()[0]
-            log = Shell(f"cd {src_dir}/gist.github.com/{user}/{dirname}; git log --oneline --decorate=short | head -1 | rg origin | rg master").readlines()[0]
+        if f.exist() and args.force:
+            os.chdir(f"{src_dir}/gist.github.com/{user}/{dirname}")
+            status = Shell(f"git status --short").readlines()[0]
+            log = Shell(f"git log --oneline --decorate=short | head -1 | rg origin | rg master").readlines()[0]
+            os.chdir(os.environ["HOME"])
             if status == [] and log != []:
                 cmd = f"rm -rf {src_dir}/gist.github.com/{user}/{dirname}"
                 Shell(cmd).call()
