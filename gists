@@ -30,7 +30,7 @@ re_token = re.compile(":(.*)")
 user = re_user.findall(user_token)[0]
 token = re_token.findall(user_token)[0]
 
-pwd = os.getcwd()
+os.chdir(os.environ["HOME"])
 
 usage = "gists <[options]...>"
 
