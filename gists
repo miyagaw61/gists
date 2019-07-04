@@ -140,7 +140,8 @@ def warn_somethingToDo(src_dir, user):
         print(red(f"warning: Look at this file: {src_dir}/gist.github.com/{user}/somethingToDo.txt", "bold"))
         exit()
 
-check_somethingToDo(src_dir, user)
+if args.force:
+    check_somethingToDo(src_dir, user)
 
 if not args.clone and not args.all_clone and args.use_ssh:
     use_ssh()
@@ -197,4 +198,6 @@ for gist in gists:
         continue
     if not(args.dgrep) and not(args.fgrep):
         print_gist(public, description, filenames, url, src_dir, user)
-warn_somethingToDo(src_dir, user)
+
+if args.force:
+    warn_somethingToDo(src_dir, user)
