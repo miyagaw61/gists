@@ -4,6 +4,7 @@ import requests
 import sys
 import re
 import os
+import platform
 from enert import *
 
 def print_gist(public, description, filenames, url, src_dir, user):
@@ -126,7 +127,11 @@ def use_ssh():
     Shell("git push --set-upstream origin master").call()
 
 src_dir = Shell("git config --global ghq.root").readlines()[0][0]
-src_dir = src_dir.replace("~", f"/home/{user}")
+pf = platform.system()
+if pf == 'Linux':
+    src_dir = src_dir.replace("~", f"/home/{user}")
+else:
+    src_dir = src_dir.replace("~", f"/User/{user}")
 
 def check_somethingToDo(src_dir, user):
     f_somethingToDo = File(f"{src_dir}/gist.github.com/{user}/somethingToDo.txt")
