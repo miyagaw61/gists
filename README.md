@@ -3,10 +3,13 @@
 ## Install
 
 ```
+$ cargo install ripgrep # brew install ripgrep
 $ gem install gist
 $ gist --login
 $ git clone https://github.com/miyagaw61/gists
 $ cp -a ./gists/gists /usr/local/bin/
+$ go get github.com/motemen/ghq
+$ git config --global ghq.root "~/src"
 $ cat > /path/to/git_token
 username:XXXXXXXXXXXXXXXXXXXXXXX
 $ export GIT_TOKEN_FILE=/path/to/git_token
