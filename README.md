@@ -8,16 +8,23 @@ $ gists
 ```
 
 ```
-usage: gists [-d|--dgrep=REGEX_FOR_DESCRIPTION] [-f|--fgrep=REGEX_FOR_FILENAME] [-p|--public] [-s|--secret] [-c|--clone=GIST_HASH]
+usage: gists <[options]...>
 
 positional arguments:
   args
 
 optional arguments:
   -h, --help
-  -d DGREP, --dgrep DGREP
-  -f FGREP, --fgrep FGREP
+  -d REGEX_FOR_DESCRIPTION, --dgrep REGEX_FOR_DESCRIPTION
+  -f REGEX_FOR_FILENAME, --fgrep REGEX_FOR_FILENAME
   -p, --public
   -s, --secret
-  -c CLONE, --clone CLONE
+  -c GIST_ID, --clone GIST_ID
+  -a, --all-clone
+  -P FILE_NAME [-d DESCRIPTION], --push-public FILE_NAME [-d DESCRIPTION]
+  -S FILE_NAME [-d DESCRIPTION], --push-secret FILE_NAME [-d DESCRIPTION]
+  -F, --force           overwrite if a directory already exists
+  -u, --use-ssh
+  -r, --rename
+
 ```
