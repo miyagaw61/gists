@@ -10,6 +10,7 @@ $ cp -a ./gists/gists /usr/local/bin/
 $ cat > /path/to/git_token
 username:XXXXXXXXXXXXXXXXXXXXXXX
 $ export GIT_TOKEN_FILE=/path/to/git_token
+$ pip install git+https://github.com/miyagaw61/enert
 $ gists --help
 $ gists
 ```
