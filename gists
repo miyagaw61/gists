@@ -90,6 +90,9 @@ def clone(gist_hash, src_dir, user):
                 Shell(f"echo {dirname} >> {src_dir}/gist.github.com/{user}/somethingToDo.txt").call()
                 return
         if args.use_ssh:
+            f = File(f"{src_dir}/gist.github.com/{user}")
+            if not f.exist():
+                Shell(f"mkdir {src_dir}/gist.github.com/{user}").call()
             Shell("ghq get git@gist.github.com:%s" % gist_hash).call()
             Shell(f"mv {src_dir}/gist.github.com/{gist_hash} {src_dir}/gist.github.com/{user}/{gist_hash}").call()
         else:
@@ -131,7 +134,7 @@ pf = platform.system()
 if pf == 'Linux':
     src_dir = src_dir.replace("~", f"/home/{user}")
 else:
-    src_dir = src_dir.replace("~", f"/User/{user}")
+    src_dir = src_dir.replace("~", f"/Users/{user}")
 
 def check_somethingToDo(src_dir, user):
     f_somethingToDo = File(f"{src_dir}/gist.github.com/{user}/somethingToDo.txt")
