@@ -96,7 +96,7 @@ def clone(gist_hash, src_dir, user):
         if args.rename:
             cmd = f"mv {src_dir}/gist.github.com/{user}/{gist_hash} {src_dir}/gist.github.com/{user}/{dirname}"
             Shell(cmd).call()
-        print(f"move to {src_dir}/gist.github.com/{user}/{dirname}")
+            print(f"move to {src_dir}/gist.github.com/{user}/{dirname}")
     else:
         print(f.abspath + ": Already exists")
 
