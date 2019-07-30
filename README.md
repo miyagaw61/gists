@@ -4,6 +4,7 @@
 
 ```
 $ gem install gist
+$ gist --login
 $ git clone https://github.com/miyagaw61/gists
 $ cp -a ./gists/gists /usr/local/bin/
 $ cat > /path/to/git_token
