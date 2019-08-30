@@ -4,6 +4,7 @@
 
 ```
 $ cargo install ripgrep # brew install ripgrep
+$ sudo apt install ruby
 $ gem install gist
 $ gist --login
 $ git clone https://github.com/miyagaw61/gists
