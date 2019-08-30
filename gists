@@ -55,6 +55,7 @@ parser.add_argument("-S", "--push-secret", metavar="FILE_NAME [-d DESCRIPTION]")
 parser.add_argument("-F", "--force", action="store_true", help="overwrite if a directory already exists")
 parser.add_argument("-u", "--use-ssh", action="store_true")
 parser.add_argument("-r", "--rename", action="store_true")
+parser.add_argument("-t", "--tags", metavar="TAGS...", nargs="*")
 
 if argc > 1:
     args = parser.parse_args(argv[1:])
@@ -215,7 +216,12 @@ def main():
     i = 0
     while True:
         i = i + 1
-        r = s.get('https://gist.github.com/search?utf8=%E2%9C%93&q=user%3Amiyagaw61&p=' + str(i))
+        tags = ''
+        if args.tags != None:
+            tag_len = len(args.tags)
+            tags = '+'.join(args.tags)
+            tags = '+' + tags
+        r = s.get('https://gist.github.com/search?utf8=%E2%9C%93&q=user%3Amiyagaw61' + tags + '&p=' + str(i))
         soup = BeautifulSoup(r.text, "html.parser")
         h3 = soup.find('h3')
         if h3.text != 'Search cheat sheet':
