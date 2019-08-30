@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 import requests
+from bs4 import BeautifulSoup
+from getpass import getpass
+import html
 import sys
 import re
 import os
@@ -8,8 +11,10 @@ import platform
 from enert import *
 
 def print_gist(public, description, filenames, url, src_dir, user):
-    url = url.replace("https://api.github.com/gists/", "")
-    print(url, end=" ")
+    gist_hash = url.replace("https://api.github.com/gists/", "")
+    gist_hash = gist_hash.replace("https://gist.github.com/" + user + "/", "")
+    gist_hash = gist_hash.replace("https://gist.github.com/", "")
+    print(gist_hash, end=" ")
     if public:
         print("[P] ", end="")
     else:
@@ -22,7 +27,7 @@ def print_gist(public, description, filenames, url, src_dir, user):
         print(filename, end="")
     print(")")
     if args.all_clone:
-        clone(url, src_dir, user)
+        clone(gist_hash, src_dir, user)
 
 user_token = open(os.environ["GIT_TOKEN_FILE"], "r").readlines()[0]
 re_user = re.compile("([^:]+)")
@@ -179,33 +184,115 @@ if args.dgrep:
 if args.fgrep:
     re_fgrep = re.compile(args.fgrep)
 
-res = requests.get("https://api.github.com/gists", auth=(user, token))
-gists = res.json()
-for gist in gists:
-    public = gist["public"]
-    if args.public:
-        if not public:
-            continue
-    elif args.secret:
-        if public:
-            continue
-    description = gist["description"]
-    filenames = gist["files"].keys()
-    url = gist["url"]
-    if args.dgrep:
-        if re_dgrep.search(description):
-            print_gist(public, description, filenames, url, src_dir, user)
-            continue
-    if args.fgrep:
-        for filename in filenames:
-            if not re_fgrep.search(filename):
-                continue
-            else:
-                print_gist(public, description, filenames, url, src_dir, user)
-                break
-        continue
-    if not(args.dgrep) and not(args.fgrep):
-        print_gist(public, description, filenames, url, src_dir, user)
+def login(user, password):
+    payload = {
+            'login': user,
+            'password': password
+    }
+    s = requests.Session()
+    r = s.get('https://github.com/login')
+    soup = BeautifulSoup(r.text, "html.parser")
+    auth_token = soup.find(attrs={'name': 'authenticity_token'}).get('value')
+    payload['authenticity_token'] = auth_token
+    #payload['utf8'] = '✓'
+    #payload['required_field_bdbf'] = ''
+    #webauthn = soup.find(attrs={'name': 'webauthn-support'}).get('value')
+    #payload['webauthn-support'] = 'supported' #webauthn
+    #timestamp = soup.find(attrs={'name': 'timestamp'}).get('value')
+    #payload['timestamp'] = timestamp
+    #timestamp_secret = soup.find(attrs={'name': 'timestamp_secret'}).get('value')
+    #payload['timestamp_secret'] = timestamp_secret
+    s.post('https://github.com/session', data=payload)
+    return s
 
-if args.force:
-    warn_somethingToDo(src_dir, user)
+# Use scraping
+def main():
+    user = input('userid: ')
+    password = getpass('password: ')
+    s = login(user, password)
+    i = 0
+    while True:
+        i = i + 1
+        r = s.get('https://gist.github.com/search?utf8=%E2%9C%93&q=user%3Amiyagaw61+knowledge+linux&p=' + str(i))
+        soup = BeautifulSoup(r.text, "html.parser")
+        h3 = soup.find('h3')
+        if h3.text != 'Search cheat sheet':
+            break
+        targets = soup.find_all(attrs={'class': 'css-truncate-target'})
+        gists = soup.find_all(class_='gist-snippet-meta d-inline-block width-full')
+        for gist in gists:
+            spans = gist.find_all("span")
+            span = spans[0]
+            description = gist.find("span", class_="f6 text-gray")
+            if description == None:
+                description = ""
+            else:
+                description = description.text
+                description = description.strip()
+            a = span.find_all('a')[1]
+            public = True
+            label = span.span
+            if label != None:
+                public = False
+            strong = a.strong
+            url = a.attrs['href']
+            url = "https://gist.github.com" + url
+            filename = strong.text
+            filenames = [filename]
+            if args.public:
+                if not public:
+                    continue
+            elif args.secret:
+                if public:
+                    continue
+            if args.dgrep:
+                if re_dgrep.search(description):
+                    print_gist(public, description, filenames, url, src_dir, user)
+                    continue
+            if args.fgrep:
+                for filename in filenames:
+                    if not re_fgrep.search(filename):
+                        continue
+                    else:
+                        print_gist(public, description, filenames, url, src_dir, user)
+                        break
+                continue
+            if not(args.dgrep) and not(args.fgrep):
+                print_gist(public, description, filenames, url, src_dir, user)
+        if args.force:
+            warn_somethingToDo(src_dir, user)
+
+# Use API
+def old_main():
+    res = requests.get("https://api.github.com/gists", auth=(user, token))
+    gists = res.json()
+    for gist in gists:
+        public = gist["public"]
+        if args.public:
+            if not public:
+                continue
+        elif args.secret:
+            if public:
+                continue
+        description = gist["description"]
+        filenames = gist["files"].keys()
+        url = gist["url"]
+        if args.dgrep:
+            if re_dgrep.search(description):
+                print_gist(public, description, filenames, url, src_dir, user)
+                continue
+        if args.fgrep:
+            for filename in filenames:
+                if not re_fgrep.search(filename):
+                    continue
+                else:
+                    print_gist(public, description, filenames, url, src_dir, user)
+                    break
+            continue
+        if not(args.dgrep) and not(args.fgrep):
+            print_gist(public, description, filenames, url, src_dir, user)
+
+    if args.force:
+        warn_somethingToDo(src_dir, user)
+
+main()
