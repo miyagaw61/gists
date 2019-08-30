@@ -207,7 +207,9 @@ def login(user, password):
 
 # Use scraping
 def main():
-    user = input('userid: ')
+    git_token = File(os.environ["GIT_TOKEN_FILE"]).read()
+    r_user = re.compile(r"(.*):")
+    user = r_user.findall(git_token)[0]
     password = getpass('password: ')
     s = login(user, password)
     i = 0
