@@ -27,15 +27,9 @@ def print_gist(public, description, filenames, url, src_dir, user):
         print(filename, end="")
     print(")")
     if args.all_clone:
-        clone(gist_hash, src_dir, user, password)
+        clone(gist_hash, src_dir, description, r_description, user, password)
 
-def clone(gist_hash, src_dir, user, password):
-    r_description = re.compile(r"[^ ]+ \[[PS]\] (.*) \(.*\)")
-    line = Shell("gists --password " + password + " | rg %s" % gist_hash).readlines()[0][0]
-    description = r_description.findall(line)[0] 
-    if description[-1:] == r" ":
-        description = description[:-1]
-    description_org = description
+def clone(gist_hash, src_dir, description, r_description, user, password):
     description = description.replace(" ", r"\ ")
     description = description.replace("(", r"\(")
     description = description.replace(")", r"\)")
@@ -262,6 +256,8 @@ if args.help:
     parser.print_help()
     exit()
 
+r_description = re.compile(r"[^ ]+ \[[PS]\] (.*) \(.*\)")
+
 git_token = File(os.environ["GIT_TOKEN_FILE"]).read()
 r_user = re.compile(r"(.*):")
 user = r_user.findall(git_token)[0]
@@ -285,7 +281,7 @@ if not args.clone and not args.all_clone and args.use_ssh:
     exit()
 
 if args.clone:
-    clone(args.clone, src_dir, user, password)
+    clone(args.clone, src_dir, description, r_description, user, password)
     warn_somethingToDo(src_dir, user)
     exit()
 
