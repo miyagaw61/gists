@@ -215,7 +215,7 @@ def main():
     i = 0
     while True:
         i = i + 1
-        r = s.get('https://gist.github.com/search?utf8=%E2%9C%93&q=user%3Amiyagaw61+knowledge+linux&p=' + str(i))
+        r = s.get('https://gist.github.com/search?utf8=%E2%9C%93&q=user%3Amiyagaw61&p=' + str(i))
         soup = BeautifulSoup(r.text, "html.parser")
         h3 = soup.find('h3')
         if h3.text != 'Search cheat sheet':
