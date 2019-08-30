@@ -27,48 +27,11 @@ def print_gist(public, description, filenames, url, src_dir, user):
         print(filename, end="")
     print(")")
     if args.all_clone:
-        clone(gist_hash, src_dir, user)
+        clone(gist_hash, src_dir, user, password)
 
-user_token = open(os.environ["GIT_TOKEN_FILE"], "r").readlines()[0]
-re_user = re.compile("([^:]+)")
-re_token = re.compile(":(.*)")
-
-user = re_user.findall(user_token)[0]
-token = re_token.findall(user_token)[0]
-
-os.chdir(os.environ["HOME"])
-
-usage = "gists <[options]...>"
-
-argv = sys.argv
-argc = len(argv)
-
-parser = mkparser(usage)
-parser.add_argument("-d", "--dgrep", metavar="REGEX_FOR_DESCRIPTION")
-parser.add_argument("-f", "--fgrep", metavar="REGEX_FOR_FILENAME")
-parser.add_argument("-p", "--public", action="store_true")
-parser.add_argument("-s", "--secret", action="store_true")
-parser.add_argument("-c", "--clone", metavar="GIST_ID")
-parser.add_argument("-a", "--all-clone", action="store_true")
-parser.add_argument("-P", "--push-public", metavar="FILE_NAME [-d DESCRIPTION]")
-parser.add_argument("-S", "--push-secret", metavar="FILE_NAME [-d DESCRIPTION]")
-parser.add_argument("-F", "--force", action="store_true", help="overwrite if a directory already exists")
-parser.add_argument("-u", "--use-ssh", action="store_true")
-parser.add_argument("-r", "--rename", action="store_true")
-parser.add_argument("-t", "--tags", metavar="TAGS...", nargs="*")
-
-if argc > 1:
-    args = parser.parse_args(argv[1:])
-else:
-    args = parser.parse_args([])
-
-if args.help:
-    parser.print_help()
-    exit()
-
-def clone(gist_hash, src_dir, user):
+def clone(gist_hash, src_dir, user, password):
     r_description = re.compile(r"[^ ]+ \[[PS]\] (.*) \(.*\)")
-    line = Shell("gists | rg %s" % gist_hash).readlines()[0][0]
+    line = Shell("gists --password " + password + " | rg %s" % gist_hash).readlines()[0][0]
     description = r_description.findall(line)[0] 
     if description[-1:] == r" ":
         description = description[:-1]
@@ -135,13 +98,6 @@ def use_ssh():
     Shell(f"git remote add origin git@gist.github.com:{gist_id}").call()
     Shell("git push --set-upstream origin master").call()
 
-src_dir = Shell("git config --global ghq.root").readlines()[0][0]
-pf = platform.system()
-if pf == 'Linux':
-    src_dir = src_dir.replace("~", f"/home/{user}")
-else:
-    src_dir = src_dir.replace("~", f"/Users/{user}")
-
 def check_somethingToDo(src_dir, user):
     f_somethingToDo = File(f"{src_dir}/gist.github.com/{user}/somethingToDo.txt")
     if f_somethingToDo.exist():
@@ -153,37 +109,6 @@ def warn_somethingToDo(src_dir, user):
     if f_somethingToDo.exist():
         print(red(f"warning: Look at this file: {src_dir}/gist.github.com/{user}/somethingToDo.txt", "bold"))
         exit()
-
-if args.force:
-    check_somethingToDo(src_dir, user)
-
-if not args.clone and not args.all_clone and args.use_ssh:
-    use_ssh()
-    exit()
-
-if args.clone:
-    clone(args.clone, src_dir, user)
-    warn_somethingToDo(src_dir, user)
-    exit()
-
-if args.dgrep:
-    push_description = args.dgrep
-else:
-    push_description = ""
-
-if args.push_public:
-    push(args.push_public, "public", push_description);
-    exit()
-
-if args.push_secret:
-    push(args.push_secret, "secret", push_description);
-    exit()
-
-if args.dgrep:
-    re_dgrep = re.compile(args.dgrep)
-
-if args.fgrep:
-    re_fgrep = re.compile(args.fgrep)
 
 def login(user, password):
     payload = {
@@ -207,11 +132,7 @@ def login(user, password):
     return s
 
 # Use scraping
-def main():
-    git_token = File(os.environ["GIT_TOKEN_FILE"]).read()
-    r_user = re.compile(r"(.*):")
-    user = r_user.findall(git_token)[0]
-    password = getpass('password: ')
+def main(user, password):
     s = login(user, password)
     i = 0
     while True:
@@ -303,4 +224,88 @@ def old_main():
     if args.force:
         warn_somethingToDo(src_dir, user)
 
-main()
+user_token = open(os.environ["GIT_TOKEN_FILE"], "r").readlines()[0]
+re_user = re.compile("([^:]+)")
+re_token = re.compile(":(.*)")
+
+user = re_user.findall(user_token)[0]
+token = re_token.findall(user_token)[0]
+
+os.chdir(os.environ["HOME"])
+
+usage = "gists <[options]...>"
+
+argv = sys.argv
+argc = len(argv)
+
+parser = mkparser(usage)
+parser.add_argument("-d", "--dgrep", metavar="REGEX_FOR_DESCRIPTION")
+parser.add_argument("-f", "--fgrep", metavar="REGEX_FOR_FILENAME")
+parser.add_argument("-p", "--public", action="store_true")
+parser.add_argument("-s", "--secret", action="store_true")
+parser.add_argument("-c", "--clone", metavar="GIST_ID")
+parser.add_argument("-a", "--all-clone", action="store_true")
+parser.add_argument("-P", "--push-public", metavar="FILE_NAME [-d DESCRIPTION]")
+parser.add_argument("-S", "--push-secret", metavar="FILE_NAME [-d DESCRIPTION]")
+parser.add_argument("-F", "--force", action="store_true", help="overwrite if a directory already exists")
+parser.add_argument("-u", "--use-ssh", action="store_true")
+parser.add_argument("-r", "--rename", action="store_true")
+parser.add_argument("-t", "--tags", metavar="TAGS...", nargs="*")
+parser.add_argument("--password", metavar="PASSWORD")
+
+if argc > 1:
+    args = parser.parse_args(argv[1:])
+else:
+    args = parser.parse_args([])
+
+if args.help:
+    parser.print_help()
+    exit()
+
+git_token = File(os.environ["GIT_TOKEN_FILE"]).read()
+r_user = re.compile(r"(.*):")
+user = r_user.findall(git_token)[0]
+if args.password:
+    password = args.password
+else:
+    password = getpass('password: ')
+
+src_dir = Shell("git config --global ghq.root").readlines()[0][0]
+pf = platform.system()
+if pf == 'Linux':
+    src_dir = src_dir.replace("~", f"/home/{user}")
+else:
+    src_dir = src_dir.replace("~", f"/Users/{user}")
+
+if args.force:
+    check_somethingToDo(src_dir, user)
+
+if not args.clone and not args.all_clone and args.use_ssh:
+    use_ssh()
+    exit()
+
+if args.clone:
+    clone(args.clone, src_dir, user, password)
+    warn_somethingToDo(src_dir, user)
+    exit()
+
+if args.dgrep:
+    push_description = args.dgrep
+else:
+    push_description = ""
+
+if args.push_public:
+    push(args.push_public, "public", push_description);
+    exit()
+
+if args.push_secret:
+    push(args.push_secret, "secret", push_description);
+    exit()
+
+if args.dgrep:
+    re_dgrep = re.compile(args.dgrep)
+
+if args.fgrep:
+    re_fgrep = re.compile(args.fgrep)
+
+main(user, password)
